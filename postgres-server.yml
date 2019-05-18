@@ -1,0 +1,75 @@
+- name: Configure PostgreSQL Server
+  hosts: postgresql-db
+  become: true
+  gather_facts: yes
+  tasks:
+  - name: postgresql key
+    apt_key:
+      url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+      state: present
+    become: true
+     
+  - name: add postgresql repo 
+    apt_repository:
+      repo: deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release | lower}}-pgdg main 
+      state: present
+      update_cache: yes
+    become: true
+  - name: Ensure PostgreSQL Python libraries are installed.
+    apt:
+      name: python3-psycopg2
+      state: present
+    
+  - name: install postgresql
+    apt:
+      name: "postgresql-9.6"
+      state: present
+      update_cache: yes
+    become: true
+  
+  - name: Change pg_hba config file (to trust)
+    template:
+      src: pg_hba.conf.trust.j2
+      dest: /etc/postgresql/9.6/main/pg_hba.conf
+      mode: 0640  
+  
+  - name: Ensure the PostgreSQL service is running
+    service: name=postgresql state=restarted enabled=yes
+
+  - name: Set user postgres password
+    postgresql_user:
+      name: postgres
+      password: postgres
+      expires: infinity  
+
+  - name: Create a new database with name "testdb"
+    postgresql_db:
+      name: testdb
+
+  - name: Change pg_hba config file (to md5)
+    template:
+      src: pg_hba.conf.j2
+      dest: /etc/postgresql/9.6/main/pg_hba.conf
+      mode: 0640
+
+  - name: Ensure the PostgreSQL service is running
+    service: name=postgresql state=restarted enabled=yes
+   
+  - name: Create a new user
+    postgresql_user:
+      db: testdb
+      login_password: postgres
+      name: test1
+      password: test1
+      expires: infinity
+      
+  - name: Grant SQL permissions
+    postgresql_privs:
+      login_password: postgres
+      db: testdb
+      role: test1
+      type: table
+      objs: ALL_IN_SCHEMA
+      privs: SELECT,INSERT,UPDATE,DELETE
+      grant_option: yes
+  

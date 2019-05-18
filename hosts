@@ -1,0 +1,11 @@
+[all:vars]
+ansible_python_interpreter = /usr/bin/python3
+[hosts]
+docker-app ansible_host=104.155.88.225 ansible_ssh_user=appuser
+postgresql-db ansible_host=104.199.66.138 ansible_ssh_user=appuser
+
+[app]
+docker-app
+
+[db]
+postgresql-db

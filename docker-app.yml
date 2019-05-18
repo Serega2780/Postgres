@@ -1,0 +1,42 @@
+- name: Install Docker
+  hosts: docker-app
+  become: true
+  gather_facts: yes
+  tasks:
+  - name: Remove an existing Docker if any
+    apt:
+      name: "{{list_of_packages}}"
+      force: yes
+      state: absent
+    vars:
+      list_of_packages:
+      - docker
+      - docker-engine
+
+  - name: Install packages to allow apt to use repository over HTTPS
+    apt:
+      name: "{{list_of_packages}}"
+      force: yes
+    vars:
+      list_of_packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+
+  - name: Install Docker's official GPG key   
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      id: 0EBFCD88
+      state: present
+
+  - apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release | lower}} stable
+      update_cache: yes
+      state: present    
+
+  - name: Install Docker CE
+    apt:
+      name: docker-ce
+      force: yes
+      state: present
